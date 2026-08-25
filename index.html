@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J2A - Location de Jeux Gonflables</title>
+    
+    <!-- Vue.js -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts pour un look plus arrondi et fun -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Configuration de la DA (Couleurs J2A) -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                    },
+                    colors: {
+                        j2aBlue: '#1e3a8a', // Bleu profond
+                        j2aLightBlue: '#eff6ff', // Fond léger
+                        j2aOrange: '#f97316', // Orange fun pour les actions
+                        j2aOrangeHover: '#ea580c',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Verrouillage CSS pour les erreurs de formulaire */
+        input:not(:placeholder-shown):invalid, 
+        textarea:not(:placeholder-shown):invalid {
+            border-color: #ef4444; /* Rouge Tailwind */
+            box-shadow: 0 0 0 1px #ef4444;
+        }
+        input:not(:placeholder-shown):valid, 
+        textarea:not(:placeholder-shown):valid {
+            border-color: #22c55e; /* Vert Tailwind */
+        }
+        
+        /* Adoucir les ombres pour un effet plus "gonflable" */
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.1), 0 8px 10px -6px rgba(30, 58, 138, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-j2aLightBlue text-gray-800 font-sans">
+    <div id="app" class="min-h-screen flex flex-col">
+        
+        <!-- HEADER / NAVIGATION -->
+        <header class="bg-j2aBlue text-white shadow-lg sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <!-- Faux Logo -->
+                    <div class="text-3xl font-extrabold tracking-tight text-j2aOrange drop-shadow-md">
+                        J2A
+                    </div>
+                    <h1 class="text-xl font-bold hidden sm:block">Location de jeux gonflables</h1>
+                </div>
+                
+                <!-- Barre de recherche -->
+                <div class="flex-1 max-w-lg mx-8">
+                    <input type="text" v-model="searchQuery" placeholder="Rechercher un château, un jeu..." 
+                           class="w-full px-4 py-2 rounded-full text-gray-900 focus:outline-none focus:ring-4 focus:ring-j2aOrange transition">
+                </div>
+
+                <!-- Bouton Panier -->
+                <button @click="isCartOpen = !isCartOpen" class="relative bg-white text-j2aBlue px-4 py-2 rounded-full font-bold hover:bg-gray-100 transition shadow-md">
+                    Mon Devis
+                    <span v-if="cart.length > 0" class="absolute -top-2 -right-2 bg-j2aOrange text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {{ cart.length }}
+                    </span>
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex gap-8 w-full">
+            
+            <!-- SIDEBAR : FILTRES -->
+            <aside class="w-64 flex-shrink-0 hidden md:block">
+                <div class="bg-white p-6 rounded-2xl card-shadow sticky top-24">
+                    <h2 class="text-lg font-extrabold text-j2aBlue mb-4 uppercase tracking-wider">Catégories</h2>
+                    <div class="space-y-3">
+                        <label v-for="category in categories" :key="category" class="flex items-center cursor-pointer group">
+                            <input type="radio" :value="category" v-model="selectedCategory" class="form-radio text-j2aOrange focus:ring-j2aOrange w-5 h-5">
+                            <span class="ml-3 text-gray-700 group-hover:text-j2aOrange font-semibold transition">{{ category }}</span>
+                        </label>
+                    </div>
+                    <button v-if="selectedCategory" @click="selectedCategory = ''" class="mt-6 text-sm text-red-500 hover:text-red-700 font-bold underline">
+                        Réinitialiser les filtres
+                    </button>
+                </div>
+            </aside>
+
+            <!-- GRILLE PRODUITS -->
+            <section class="flex-1">
+                <div v-if="filteredGames.length === 0" class="text-center py-12 text-gray-500 font-bold text-xl">
+                    Aucun jeu ne correspond à votre recherche.
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-for="game in filteredGames" :key="game.id" class="bg-white rounded-2xl overflow-hidden card-shadow hover:scale-105 transition duration-300 border-2 border-transparent hover:border-j2aOrange">
+                        <!-- Espace Image factice -->
+                        <div class="h-48 bg-blue-100 flex items-center justify-center text-blue-300 font-bold text-2xl relative">
+                            [Photo {{ game.name }}]
+                            <span v-if="game.surDevis" class="absolute top-2 right-2 bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-full opacity-80">
+                                Sur devis
+                            </span>
+                        </div>
+                        
+                        <div class="p-5 flex flex-col h-full">
+                            <h3 class="text-xl font-extrabold text-j2aBlue mb-1">{{ game.name }}</h3>
+                            <p class="text-sm text-gray-500 font-semibold mb-4">{{ game.category }}</p>
+                            
+                            <div class="mt-auto">
+                                <div v-if="!game.surDevis" class="mb-3">
+                                    <div class="text-sm"><span class="font-bold text-gray-700">1 Jour :</span> {{ game.price1 }} € HT</div>
+                                    <div class="text-sm"><span class="font-bold text-gray-700">2 Jours :</span> {{ game.price2 }} € HT</div>
+                                </div>
+                                <div v-else class="mb-3 text-j2aOrange font-bold text-sm h-10 flex items-center">
+                                    Tarif sur demande spécifique
+                                </div>
+                                
+                                <button @click="addToCart(game)" class="w-full bg-j2aOrange hover:bg-j2aOrangeHover text-white font-bold py-2 px-4 rounded-xl shadow-md transition transform active:scale-95">
+                                    Ajouter au devis
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- PANIER / DEVIS VOLANT (Sidebar droite) -->
+        <div v-if="isCartOpen" class="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+            <div class="absolute inset-0 bg-gray-900 bg-opacity-50 transition-opacity" @click="isCartOpen = false"></div>
+            
+            <div class="fixed inset-y-0 right-0 max-w-md w-full flex">
+                <div class="w-full bg-white shadow-2xl flex flex-col">
+                    
+                    <div class="px-6 py-4 bg-j2aBlue text-white flex items-center justify-between">
+                        <h2 class="text-xl font-extrabold">Votre demande de devis</h2>
+                        <button @click="isCartOpen = false" class="text-white hover:text-gray-300 text-2xl font-bold">&times;</button>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-6">
+                        <div v-if="cart.length === 0" class="text-center text-gray-500 font-bold mt-10">
+                            Votre liste est vide pour le moment.
+                        </div>
+                        
+                        <ul v-else class="space-y-4 mb-8">
+                            <li v-for="(item, index) in cart" :key="index" class="flex justify-between items-center bg-j2aLightBlue p-3 rounded-xl border border-blue-100">
+                                <div>
+                                    <div class="font-bold text-j2aBlue">{{ item.name }}</div>
+                                    <div class="text-sm text-gray-600" v-if="!item.surDevis">À partir de {{ item.price1 }} €</div>
+                                    <div class="text-sm text-j2aOrange font-semibold" v-else>Prix sur mesure</div>
+                                </div>
+                                <button @click="removeFromCart(index)" class="text-red-500 hover:text-red-700 font-bold px-2 py-1 bg-white rounded-lg shadow-sm">
+                                    Retirer
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- FORMULAIRE STRICT -->
+                        <form v-if="cart.length > 0" @submit.prevent="submitQuote" class="space-y-4 border-t-2 border-dashed border-gray-200 pt-6">
+                            <h3 class="font-extrabold text-j2aBlue text-lg">Vos coordonnées & événement</h3>
+                            
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Dates de location *</label>
+                                <div class="flex gap-2">
+                                    <input type="date" required class="w-1/2 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-j2aOrange outline-none">
+                                    <input type="date" required class="w-1/2 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-j2aOrange outline-none">
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4">
+                                <div class="w-1/2">
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Code Postal *</label>
+                                    <input type="text" pattern="[0-9]{5}" placeholder="Ex: 59310" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-j2aOrange outline-none">
+                                </div>
+                                <div class="w-1/2">
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Ville *</label>
+                                    <input type="text" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-j2aOrange outline-none">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Email *</label>
+                                <input type="email" placeholder="contact@exemple.fr" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-j2aOrange outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Téléphone *</label>
+                                <input type="tel" pattern="[0-9]{10}" placeholder="Ex: 0610045827" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-j2aOrange outline-none">
+                            </div>
+
+                            <button type="submit" class="w-full bg-j2aBlue hover:bg-blue-900 text-white font-extrabold py-3 px-4 rounded-xl shadow-lg mt-4 transition transform active:scale-95">
+                                Envoyer ma demande
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    searchQuery: '',
+                    selectedCategory: '',
+                    isCartOpen: false,
+                    cart: [],
+                    categories: ['Châteaux et Toboggans', 'Jeux Sportifs', 'Jeux Aquatiques', 'Machines Alimentaires'],
+                    games: [
+                        { id: 1, name: 'Château Clown', category: 'Châteaux et Toboggans', price1: 150, price2: 250, surDevis: false },
+                        { id: 2, name: 'Parcours XXL', category: 'Jeux Sportifs', price1: 300, price2: 500, surDevis: false },
+                        { id: 3, name: 'Machine à Barbe à Papa', category: 'Machines Alimentaires', price1: 50, price2: 80, surDevis: false },
+                        { id: 4, name: 'Crazy Boat', category: 'Jeux Aquatiques', price1: 0, price2: 0, surDevis: true },
+                        { id: 5, name: 'Taureau Mécanique', category: 'Jeux Sportifs', price1: 450, price2: 700, surDevis: false },
+                        { id: 6, name: 'Mascotte Ours', category: 'Châteaux et Toboggans', price1: 0, price2: 0, surDevis: true }
+                    ]
+                }
+            },
+            computed: {
+                filteredGames() {
+                    return this.games.filter(game => {
+                        const matchCategory = this.selectedCategory === '' || game.category === this.selectedCategory;
+                        const matchSearch = game.name.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        return matchCategory && matchSearch;
+                    });
+                }
+            },
+            methods: {
+                addToCart(game) {
+                    this.cart.push(game);
+                    this.isCartOpen = true; // Ouvre le panier automatiquement pour montrer l'action
+                },
+                removeFromCart(index) {
+                    this.cart.splice(index, 1);
+                },
+                submitQuote() {
+                    alert("Formulaire de devis valide et simulé avec succès ! Dans la vraie vie, cela enverrait un email au backend.");
+                    this.cart = [];
+                    this.isCartOpen = false;
+                }
+            }
+        }).mount('#app');
+
+        
+    </script>
+</body>
+</html>

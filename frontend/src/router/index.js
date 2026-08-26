@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Catalog from '@/views/Catalog.vue';
 
-// definition des routes de l'application
 const routes = [
   {
     path: '/',
@@ -11,16 +10,36 @@ const routes = [
   {
     path: '/devis',
     name: 'checkout',
-    // chargement paresseux (lazy loading) pour optimiser les performances au demarrage
     component: () => import('@/views/Checkout.vue')
+  },
+  // route dynamique pour la fiche d'un jeu specifique
+  {
+    path: '/jeu/:id',
+    name: 'game-detail',
+    component: () => import('@/views/GameDetail.vue')
+  },
+  // routes pour les pages statiques
+  {
+    path: '/prestations',
+    name: 'prestations',
+    component: () => import('@/views/Prestations.vue')
+  },
+  {
+    path: '/contact',
+    name: 'contact',
+    component: () => import('@/views/Contact.vue')
+  },
+  {
+    path: '/a-propos',
+    name: 'about',
+    component: () => import('@/views/About.vue')
   }
 ];
 
 const router = createRouter({
-  // utilisation de l'historique html5 pour des urls propres sans le hash (#)
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
-  // gestion du defilement lors des changements de page
+  // remonte en haut de page a chaque changement de route
   scrollBehavior() {
     return { top: 0 };
   }

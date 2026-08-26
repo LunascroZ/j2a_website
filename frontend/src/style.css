@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Verrouillage CSS pour les erreurs de formulaire */
+input:not(:placeholder-shown):invalid, 
+textarea:not(:placeholder-shown):invalid {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 1px #ef4444;
+}
+input:not(:placeholder-shown):valid, 
+textarea:not(:placeholder-shown):valid {
+    border-color: #22c55e;
+}
+
+/* Adoucir les ombres pour un effet plus "gonflable" */
+.card-shadow {
+    box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.1), 0 8px 10px -6px rgba(30, 58, 138, 0.1);
+}
+
+/* Animation de vol vers le panier */
+@keyframes flyToCart {
+    0% {
+      left: var(--startX);
+      top: var(--startY);
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      /* On utilise maintenant les coordonnées exactes calculées par Vue */
+      left: var(--endX); 
+      top: var(--endY);
+      transform: scale(0.1);
+      opacity: 0;
+    }
+  }
+  
+  .animate-fly-to-cart {
+    animation: flyToCart 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
